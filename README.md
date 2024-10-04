@@ -4,7 +4,6 @@
 #include <iomanip>
  
 using namespace std;
- 
 class Time
 {
     private:
