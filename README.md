@@ -1,3 +1,8 @@
+So I have made a asset object of aircraft and we basically check that facilitybnppshare data is same as savebnppshare data and also the as we want to verify that the changes in bnppshare for that particular facility is aligned to that asset also, is there any improvement required in the code to run this test function
+
+
+
+
 /*C++ program to read time in HH:MM:SS format and convert into total seconds.*/
  
 #include <iostream>
@@ -46,3 +51,6 @@ int main()
      
     return 0;
 }
+
+
+
