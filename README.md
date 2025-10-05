@@ -51,6 +51,26 @@ int main()
      
     return 0;
 }
+-------------
 
+
+
+@RestController
+@RequestMapping("/api/admin")
+@RequiredArgsConstructor
+public class BnppShareDebugController {
+
+    private final CalculateBnppShareJob calculateBnppShareJob;
+
+    @PostMapping("/run-bnpp-share-job")
+    public ResponseEntity<String> runBnppShareJob() {
+        try {
+            calculateBnppShareJob.execute(null);  // directly runs job
+            return ResponseEntity.ok("BNPP share job executed successfully.");
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
+        }
+    }
+}
 
 
