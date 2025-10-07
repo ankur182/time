@@ -74,3 +74,17 @@ public class BnppShareDebugController {
 }
 
 
+--------++
+List<String> assetIds = facilityBnppSharesToCreateOrUpdate.stream()
+    .flatMap(facilityBnppShare ->
+        anyAssetRepository
+            .findAllNotAbandonedNotDeletedByFacilityId(facilityBnppShare.getFacilityUniqueId())
+            .stream()
+            .map(AbstractDomainEntity::getId)
+            .map(Object::toString)
+    )
+    .toList();
+
+auditTrailProc.saveAll(
+    buildAuditTrailFromBnppShare(assetIds, TargetType.REQUEST_PROPAGATION, ActionType.CREATE, details)
+);
