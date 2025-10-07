@@ -88,3 +88,5 @@ List<String> assetIds = facilityBnppSharesToCreateOrUpdate.stream()
 auditTrailProc.saveAll(
     buildAuditTrailFromBnppShare(assetIds, TargetType.REQUEST_PROPAGATION, ActionType.CREATE, details)
 );
+xxxxcxxxxxxxx
+You’re right — since this method/field is used only within FacilityBnppShareService and not intended for subclass access, private is the appropriate visibility. I’ve updated it accordingly.
