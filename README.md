@@ -1,92 +1,69 @@
-So I have made a asset object of aircraft and we basically check that facilitybnppshare data is same as savebnppshare data and also the as we want to verify that the changes in bnppshare for that particular facility is aligned to that asset also, is there any improvement required in the code to run this test function
+Step 1. Create the Query object
+📁 com.bnpp.asset.v2.domain.facility.queries
+Copy code
+Java
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 
-
-
-
-/*C++ program to read time in HH:MM:SS format and convert into total seconds.*/
- 
-#include <iostream>
-#include <iomanip>
- 
-using namespace std;
-class Time
-{
-    private:
-        int seconds;
-        int hh,mm,ss;
-    public:
-        void getTime(void);
-        void convertIntoSeconds(void);
-        void displayTime(void);
-};
- 
-void Time::getTime(void)
-{
-    cout << "Enter time:" << endl;
-    cout << "Hours?   ";          cin >> hh;
-    cout << "Minutes? ";          cin >> mm;
-    cout << "Seconds? ";          cin >> ss;
+@Getter
+@AllArgsConstructor
+public class GetAssetsByFacilityIdQuery {
+    private final String facilityId;
 }
- 
-void Time::convertIntoSeconds(void)
-{
-    seconds = hh*3600 + mm*60 + ss;
-}
- 
-void Time::displayTime(void)
-{
-    cout << "The time is = " << setw(2) << setfill('0') << hh << ":"
-                             << setw(2) << setfill('0') << mm << ":"
-                             << setw(2) << setfill('0') << ss << endl;
-    cout << "Time in total seconds: " << seconds;
-}
- 
-int main()
-{
-    Time T; //creating objects
-     
-    T.getTime();
-    T.convertIntoSeconds();
-    T.displayTime();
-     
-    return 0;
-}
--------------
+This is just a request model passed through the mediator.
+Step 2. Create the Query Handler
+📁 com.bnpp.asset.v2.domain.facility.handlers
+Copy code
+Java
+import com.bnpp.asset.v2.domain.facility.queries.GetAssetsByFacilityIdQuery;
+import com.bnpp.asset.v2.infrastructure.repositories.SimpleAssetPersistenceRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+import java.util.List;
 
-
-
-@RestController
-@RequestMapping("/api/admin")
+@Component
 @RequiredArgsConstructor
-public class BnppShareDebugController {
+public class GetAssetsByFacilityIdHandler implements QueryHandler<GetAssetsByFacilityIdQuery, List<String>> {
 
-    private final CalculateBnppShareJob calculateBnppShareJob;
+    private final SimpleAssetPersistenceRepository simpleAssetPersistenceRepository;
 
-    @PostMapping("/run-bnpp-share-job")
-    public ResponseEntity<String> runBnppShareJob() {
-        try {
-            calculateBnppShareJob.execute(null);  // directly runs job
-            return ResponseEntity.ok("BNPP share job executed successfully.");
-        } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
-        }
+    @Override
+    public List<String> handle(GetAssetsByFacilityIdQuery query) {
+        return simpleAssetPersistenceRepository.findByFacilityId(query.getFacilityId())
+                                               .stream()
+                                               .map(asset -> asset.getId().toString())
+                                               .toList();
     }
 }
+✅ This handler takes a facilityId and uses the v2 repository to fetch asset IDs.
+It’s your “bridge” between domain service and persistence.
+Step 3. Modify your SimpleAssetPersistenceRepository
+📁 com.bnpp.asset.v2.infrastructure.repositories
+Copy code
+Java
+import com.bnpp.asset.v2.infrastructure.entities.SimpleAssetEntity;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.List;
 
+@Repository
+public interface SimpleAssetPersistenceRepository extends JpaRepository<SimpleAssetEntity, String> {
+    List<SimpleAssetEntity> findByFacilityId(String facilityId);
+}
+Step 4. Inject the mediator in your service layer
+In your FacilityBnppShareService:
+Copy code
+Java
+import com.bnpp.asset.shared.mediator.Mediator; // or similar, depending on your setup
 
---------++
-List<String> assetIds = facilityBnppSharesToCreateOrUpdate.stream()
-    .flatMap(facilityBnppShare ->
-        anyAssetRepository
-            .findAllNotAbandonedNotDeletedByFacilityId(facilityBnppShare.getFacilityUniqueId())
-            .stream()
-            .map(AbstractDomainEntity::getId)
-            .map(Object::toString)
-    )
-    .toList();
+@RequiredArgsConstructor
+@Service
+public class FacilityBnppShareService {
 
-auditTrailProc.saveAll(
-    buildAuditTrailFromBnppShare(assetIds, TargetType.REQUEST_PROPAGATION, ActionType.CREATE, details)
-);
-xxxxcxxxxxxxx
-You’re right — since this method/field is used only within FacilityBnppShareService and not intended for subclass access, private is the appropriate visibility. I’ve updated it accordingly.
+    private final Mediator mediator;
+    // other dependencies...
+
+    private List<String> getAssetIdsForFacility(FacilityBnppShare facilityBnppShare) {
+        return mediator.dispatch(new GetAssetsByFacilityIdQuery(facilityBnppShare.getFacilityUniqueId()));
+    }
+}
