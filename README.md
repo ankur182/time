@@ -1,19 +1,3 @@
-hasSponsorsFromCreditEvents(): Observable<boolean> {
-  return this.leverageFacade.creditEvents$.pipe(
-    take(1),
-    map((events: any[]) => {
-      if (!Array.isArray(events)) {
-        return false;
-      }
-      return events.some(
-        (event) => Array.isArray(event.sponsors) && event.sponsors.length > 0
-      );
-    }),
-    catchError(() => of(false))
-  );
-}
-
----
 async canExit(isLeveragePage: boolean): Promise<boolean> {
   if (!isLeveragePage) return true;
 
