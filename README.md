@@ -67,3 +67,21 @@ public class FacilityBnppShareService {
         return mediator.dispatch(new GetAssetsByFacilityIdQuery(facilityBnppShare.getFacilityUniqueId()));
     }
 }
+
+
+
+gsvf th
+
+
+hasSponsorsFromCreditEvents(): Observable<boolean> {
+  return this.leverageFacade.creditEvents$.pipe(
+    filter((events): events is any[] => Array.isArray(events)),
+    take(1),
+    map((events) =>
+      events.some(
+        (e) => Array.isArray(e.sponsors) && e.sponsors.length > 0
+      )
+    ),
+    catchError(() => of(false))
+  );
+}
