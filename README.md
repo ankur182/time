@@ -1,36 +1,29 @@
-async canExit(isLeveragePage: boolean): Promise<boolean> {
-  if (!isLeveragePage) return true;
+it('should open warning popup when sponsors are missing in credit events', (done) => {
+  // Arrange
+  const matDialogSpy = jest.spyOn(mockMatDialog, 'open');
+  component.signatureDate = '2024-06-11';
+  component.creditInfoModel = {
+    agentName: 'AgentName',
+    bnppShare: '12',
+  } as any;
 
-  // 1️⃣ Validate signature date
-  if (!this.signatureDate) {
-    this.dialog.open<AlertDialogComponent, ConfirmDialogData>(AlertDialogComponent, {
+  // Mock credit events - no sponsors
+  jest
+    .spyOn(mockLeverageFacade, 'creditEvents$', 'get')
+    .mockReturnValue(of([{ sponsors: [] }]));
+
+  // Act
+  component.canExit(true).subscribe((deactivate) => {
+    // Assert
+    expect(deactivate).toBeFalsy();
+    expect(matDialogSpy).toHaveBeenCalledWith(AlertDialogComponent, {
       data: {
         title: 'Warning',
-        description: '<p>Missing information: Kindly update closing date on credit information.</p>',
+        description:
+          '<p>Missing information: Kindly update Sponsors details on credit event.</p>',
         isValidateDisabled: false,
       },
     });
-    return false;
-  }
-
-  // 2️⃣ Validate agent name & BNPP share
-  if (!this.creditInfoModel?.agentName || !this.creditInfoModel?.bnppShare) {
-    this.showWarningInfoDialog();
-    return false;
-  }
-
-  // 3️⃣ Validate sponsors inside credit events
-  const hasSponsors = await firstValueFrom(this.hasSponsorsFromCreditEvents());
-  if (!hasSponsors) {
-    this.dialog.open<AlertDialogComponent, ConfirmDialogData>(AlertDialogComponent, {
-      data: {
-        title: 'Warning',
-        description: '<p>Missing information: Kindly update Sponsors details on credit event.</p>',
-        isValidateDisabled: false,
-      },
-    });
-    return false;
-  }
-
-  return true;
-}
+    done();
+  });
+});
